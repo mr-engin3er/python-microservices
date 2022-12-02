@@ -1,4 +1,4 @@
-import pika, json
+import pika, json,os
 
 
 def upload(file,fs,channel,access):
@@ -16,7 +16,7 @@ def upload(file,fs,channel,access):
     try:
         channel.basic_publish(
             exchange="",
-            routing_key="video",
+            routing_key=os.getenv("VIDEO_QUEUE","video"),
             body=json.dumps(message),
             properties=pika.BasicProperties(
                 delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
