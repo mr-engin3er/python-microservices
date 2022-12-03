@@ -1,7 +1,8 @@
 import os
 import psycopg2
+from werkzeug.security import generate_password_hash
 
-HOST=os.getenv('HOST',"192.168.1.42")
+HOST=os.getenv('HOST',"192.168.1.4")
 DATABASE=os.getenv('DATABASE',"auth")
 USER=os.getenv('POSTGRES_USER','root')
 PASSWORD=os.getenv('POSTGRES_PASSWORD','root')
@@ -38,13 +39,11 @@ cur.execute('CREATE TABLE users (id  SERIAL PRIMARY KEY,'
                                  )
 
 # Insert data into the table
-
+data = ('dheeraj@gmail.com', generate_password_hash('Admin@123'))
 cur.execute('INSERT INTO users (email, password)'
-            'VALUES (%s, %s)',
-            ('dheeraj@gmail.com',
-             'Admin@123',)
+            'VALUES (%s, %s);',
+            data
             )
-
 
 conn.commit()
 

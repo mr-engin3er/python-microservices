@@ -1,16 +1,16 @@
 import jwt, datetime, os
 from flask import Flask, request
 import psycopg2
-from cryptography.fernet import Fernet
+import psycopg2.extras
+from werkzeug.security import check_password_hash
 
-HOST=os.getenv('HOST',"192.168.1.42")
+
+HOST=os.getenv('HOST',"192.168.1.4")
 DATABASE=os.getenv('DATABASE',"auth")
-USER=os.getenv('POSTGRES_USER','auth_user')
+USER=os.getenv('POSTGRES_USER','root')
 PASSWORD=os.getenv('POSTGRES_PASSWORD','root')
 JWT_SECRET = os.getenv("JWT_SECRET","some-secret")
 
-key = Fernet.generate_key()
-fernet = Fernet(key)
 
 def get_db_connection():
     conn = psycopg2.connect(host=HOST,
@@ -29,10 +29,11 @@ def login():
     if not auth:
         return {"error":"Authentication creds not provided"},401
     
-    cur = get_db_connection().cursor()
-    user = cur.execute(f"SELECT * from users where email={auth.email} and password={fernet.encrypt(auth.password.encode())}")
-    if len(user) > 0:
-        return {"message":"Login successfully.","token": jwt.encode(user[0],JWT_SECRET,True) },200
+    cur = get_db_connection().cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute(f"SELECT * from users where email='{auth.username}'")
+    user = dict(cur.fetchone())
+    if user and check_password_hash(user.get("password"),auth.password):
+        return {"message":"Login successfully.","token": create_jwt(user,True) },200
     return {"error":"Authentication creds not provided"},401
 
 @server.route("/api/v1/validate",methods=["POST"])
@@ -43,7 +44,7 @@ def validate():
     _, encoded_jwt = token.split(" ")
 
     try:
-        decoded_jwt = jwt.decode(encoded_jwt,key=JWT_SECRET,algorithm=["hs256"])
+        decoded_jwt = jwt.decode(encoded_jwt,key=JWT_SECRET,algorithms=["HS256"])
         return decoded_jwt,200
     except:
         return {"error":"Invalid token"},401
@@ -53,10 +54,10 @@ def create_jwt(user,authz):
         {
             "email": user.get("email"),
             "exp" : get_jwt_expiry(),
-            "created_at" : datetime.datetime.now(tx=datetime.timezone.now())
+            "created_at" : str(datetime.datetime.utcnow())
         },
         key=JWT_SECRET,
-        algorithm=["hs256"]
+        algorithm="HS256"
     )
 
 
