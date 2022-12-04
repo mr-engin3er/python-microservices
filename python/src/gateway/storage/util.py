@@ -1,11 +1,14 @@
 import pika, json,os
+import logging
 
+logger = logging.Logger(__name__)
 
 def upload(file,fs,channel,access):
     try:
         file_id = fs.put(file)
     except Exception as err:
-        return {"error":err}, 500
+        logger.error(f"Error in uploading video. {str(err)}")
+        return {"error": str(err)}, 500
 
     message = {
         "video_file_id" : str(file_id),
@@ -24,4 +27,4 @@ def upload(file,fs,channel,access):
         )
     except Exception as err:
         fs.delete(file_id)
-        return {"error":err},500
+        return {"error":str(err)},500

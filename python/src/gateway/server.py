@@ -5,7 +5,7 @@ from auth import validate
 from auth_svc import access
 from storage import util
 
-MONGO_URI =  os.getenv("MONGO_URI","mongodb://host.minikube.internal:27017/videos")
+MONGO_URI =  os.getenv("MONGO_URI","mongodb://root:root@host.minikube.internal:27017/videos?authSource=admin")
 server= Flask(__name__)
 server.config["MONGO_URI"] = MONGO_URI
 
@@ -27,11 +27,9 @@ def login():
 @server.route("/upload",methods=["POST"])
 def upload():
     access, err = validate.token(request)
-    if not err:
-        access = json.loads(access)
-    else: 
+    if err:
         return err
-    if access.get("user"):
+    if access.get("email"):
         if not len(request.files) == 1:
             return {"error":"expecting 1 file only."},400
         
