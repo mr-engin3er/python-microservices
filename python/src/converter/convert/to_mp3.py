@@ -40,4 +40,4 @@ def start(body,fs_videos,fs_mp3s,channel):
         )
     except Exception as err:
         fs_mp3s.delete(mp3_file_id)
-        return f"Failed to publish. Err is {err}"
+        return f"Failed to publish. Err is {str(err)}"
